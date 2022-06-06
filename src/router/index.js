@@ -8,21 +8,21 @@ import toast from '~/utils/toast'
 import GoodsList from '~/pages/goodsList.vue'
 import store, { ACT_GET_USERINFO, SET_USERINFO } from '~/store'
 import { showFullLoading, hideFullLoading } from '../utils/loading'
+import { SET_MENUINFO } from '../store'
 
 const routes = [
     {
         path: '/',
         component: Layout,
-        children: [
-            { path: '/', component: Index, meta: { title: '首页' } },
-            {
-                path: '/goods/list',
-                component: GoodsList,
-                meta: { title: '测试' },
-            },
-        ],
+        name: 'admin',
+        children: [],
     },
-    { path: '/login', component: Login, meta: { title: '登录' } },
+    {
+        path: '/login',
+        name: 'login',
+        component: Login,
+        meta: { title: '登录' },
+    },
     {
         path: '/:pathMatch(.*)*',
         name: 'NotFound',
@@ -31,10 +31,44 @@ const routes = [
     },
 ]
 
+const asyncRoutes = [
+    {
+        path: '/',
+        name: 'index',
+        component: Index,
+        meta: { title: '首页' },
+    },
+    {
+        path: '/goods/list',
+        name: 'shop_goods_list',
+        component: GoodsList,
+        meta: { title: '测试' },
+    },
+]
+
 const router = createRouter({
     history: createWebHashHistory(),
     routes,
 })
+
+// 动态添加路由
+export function addRoutes(menus, parentName = 'admin') {
+    menus.forEach((menu) => {
+        const item = asyncRoutes.find((route) => route.name === menu.desc)
+        if (item && !router.hasRoute(menu.desc)) {
+            router.addRoute(parentName, {
+                name: menu.desc,
+                path: menu.frontpath,
+            })
+        }
+
+        if (menu.child && menu.child.length) {
+            addRoutes(menu.child, menu.frontpath)
+        }
+    })
+
+    router.getRoutes()
+}
 
 router.beforeEach(async (to, from, next) => {
     showFullLoading()
@@ -51,7 +85,7 @@ router.beforeEach(async (to, from, next) => {
 
     if (token) {
         const reply = await store.dispatch(ACT_GET_USERINFO)
-        store.commit(SET_USERINFO, reply.data)
+        addRoutes(reply.data.menus)
     }
 
     const title = `后台系统 - ${ to.meta.title ? to.meta.title : '' }`
