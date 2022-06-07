@@ -47,7 +47,6 @@ import { computed } from '@vue/runtime-core'
 import { useRoute, useRouter } from 'vue-router'
 import store from '~/store'
 
-console.log(useRoute().path)
 const defaultActive = ref(useRoute().path)
 
 const router = useRouter()

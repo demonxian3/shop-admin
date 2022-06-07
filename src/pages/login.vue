@@ -47,7 +47,6 @@
                         class="login-btn"
                         type="success"
                         :loading="loadingRef"
-                        :loading-icon="Eleme"
                         @click="submitForm(ruleFormRef)"
                     >
                         登录

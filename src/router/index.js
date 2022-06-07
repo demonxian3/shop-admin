@@ -31,20 +31,10 @@ const routes = [
     },
 ]
 
-const asyncRoutes = [
-    {
-        path: '/',
-        name: 'index',
-        component: Index,
-        meta: { title: '首页' },
-    },
-    {
-        path: '/goods/list',
-        name: 'shop_goods_list',
-        component: GoodsList,
-        meta: { title: '测试' },
-    },
-]
+const routerComponentsMap = {
+    '/': Index,
+    '/goods/list': GoodsList,
+}
 
 const router = createRouter({
     history: createWebHashHistory(),
@@ -53,25 +43,35 @@ const router = createRouter({
 
 // 动态添加路由
 export function addRoutes(menus, parentName = 'admin') {
-    menus.forEach((menu) => {
-        const item = asyncRoutes.find((route) => route.name === menu.desc)
-        if (item && !router.hasRoute(menu.desc)) {
-            router.addRoute(parentName, {
-                name: menu.desc,
-                path: menu.frontpath,
-            })
-        }
+    let hasNewRoute = false
 
+    menus.forEach((menu) => {
         if (menu.child && menu.child.length) {
-            addRoutes(menu.child, menu.frontpath)
+            const tmp = addRoutes(menu.child)
+            hasNewRoute = hasNewRoute || tmp
+        } if (
+            !router.hasRoute(menu.frontpath)
+            && menu.frontpath
+            // && routerComponentsMap[menu.frontpath]
+        ) {
+            const newRoute = {
+                name: menu.frontpath,
+                path: menu.frontpath,
+            }
+            if (routerComponentsMap.hasOwnProperty(newRoute.name)) {
+                newRoute.component = routerComponentsMap[newRoute.name]
+            }
+            router.addRoute(parentName, newRoute)
+            hasNewRoute = true
         }
     })
 
-    router.getRoutes()
+    return hasNewRoute
 }
 
 router.beforeEach(async (to, from, next) => {
     showFullLoading()
+
     const token = store.getters.token
     if (!token && to.path !== '/login') {
         toast.message.warning('请先登录')
@@ -83,15 +83,16 @@ router.beforeEach(async (to, from, next) => {
         return next({ path: from.path ? from.path : '/' })
     }
 
+    let hasNewRoute = false
     if (token) {
         const reply = await store.dispatch(ACT_GET_USERINFO)
-        addRoutes(reply.data.menus)
+        hasNewRoute = addRoutes(reply.data.menus)
     }
-
     const title = `后台系统 - ${ to.meta.title ? to.meta.title : '' }`
     document.title = title
-
-    next()
+ 
+    hasNewRoute ? next(to.fullPath) : next()
+    // next(to.fullPath)
 })
 
 router.afterEach(() => hideFullLoading())
