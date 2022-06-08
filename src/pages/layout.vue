@@ -7,11 +7,6 @@
             <el-aside><l-menu></l-menu></el-aside>
             <el-main>
                 <l-tabbar></l-tabbar>
-                <div class="h-83vh border mt-3">
-                    <el-scrollbar>
-                        <router-view></router-view>
-                    </el-scrollbar>
-                </div>
             </el-main>
         </el-container>
     </el-container>

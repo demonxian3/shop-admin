@@ -6,6 +6,7 @@ import NotFound from '~/pages/404.vue'
 import Layout from '~/pages/layout.vue'
 import toast from '~/utils/toast'
 import GoodsList from '~/pages/goodsList.vue'
+import CategoryList from '~/pages/categoryList.vue'
 import store, { ACT_GET_USERINFO, SET_USERINFO } from '~/store'
 import { showFullLoading, hideFullLoading } from '../utils/loading'
 import { SET_MENUINFO } from '../store'
@@ -34,6 +35,7 @@ const routes = [
 const routerComponentsMap = {
     '/': Index,
     '/goods/list': GoodsList,
+    '/category/list': CategoryList,
 }
 
 const router = createRouter({
@@ -57,12 +59,13 @@ export function addRoutes(menus, parentName = 'admin') {
             const newRoute = {
                 name: menu.frontpath,
                 path: menu.frontpath,
+                meta: { name: menu.name },
             }
             if (routerComponentsMap.hasOwnProperty(newRoute.name)) {
                 newRoute.component = routerComponentsMap[newRoute.name]
+                router.addRoute(parentName, newRoute)
+                hasNewRoute = true
             }
-            router.addRoute(parentName, newRoute)
-            hasNewRoute = true
         }
     })
 
@@ -84,7 +87,7 @@ router.beforeEach(async (to, from, next) => {
     }
 
     let hasNewRoute = false
-    if (token) {
+    if (token && !Object.keys(store.state.userInfo).length) {
         const reply = await store.dispatch(ACT_GET_USERINFO)
         hasNewRoute = addRoutes(reply.data.menus)
     }
